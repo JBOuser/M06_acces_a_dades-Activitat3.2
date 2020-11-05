@@ -25,9 +25,6 @@ import org.w3c.dom.NodeList;
 
 public class Menu {
 	
-	private static List<Node> assignatures = new ArrayList<Node>();
-	private static Map<String,Node> alumnes = new HashMap<String,Node>();
-
 	private final static String[] menu = {"0.Sortir",
 			"1.Llegir d'un fitxer XML pel mètode seqüencial (introduir nom del fitxer)",
 			"2.Llegir d'un fitxer XML pel mètode sintàctic (introduir nom del fitxer)",
@@ -53,9 +50,7 @@ public class Menu {
 	{
 		int chosen_option = 0;
 		String fileName = "/media/jbdragon/KINGSTON250/EscolaDelTreball/2n/M06_acces_a_dades/Activitat3.2/assignatures.xml";
-		
 		Document doc = null;
-		Node rootNode = null;
 		
 		do
 		{
@@ -71,15 +66,13 @@ public class Menu {
 					//sequencial read of entered file
 					case 1:
 						
-						if(fileName == null)
+						if(checkIfFileNameIsNull(fileName))
 						{
 							fileName = enterText("Introdueix el nom del fitxer: ");
 						}
 						
 						doc = getDocumentXML(fileName);
-						doc.normalizeDocument();
-						rootNode = doc.getDocumentElement();							
-						//readXMLSequencial(rootNode);	
+						readXMLSequencial(doc);
 						System.out.println("File read -- OK");			
 						
 						break;
@@ -87,108 +80,57 @@ public class Menu {
 					//sintactic read of entered file
 					case 2:
 						
-						if(fileName == null)
+						if(checkIfFileNameIsNull(fileName))
 						{
 							fileName = enterText("Introdueix el nom del fitxer: ");
 						}
 
-						try 
-						{
-							//sintactic
-							doc = getDocumentXML(fileName);
-							XPath pathAssignatures = XPathFactory.newInstance().newXPath();
-							rootNode = (Node) pathAssignatures.compile("/assignatures").evaluate(doc,XPathConstants.NODE);	
-							//readXMLSintactic(rootNode);	
-							System.out.println("File read -- OK");			
-						}
-						catch(Exception e)
-						{
-							System.out.println("XPath assignatura -- ERROR");			
-						}							
-						
+						doc = getDocumentXML(fileName);
+						readXMLSintactic(doc);
+						doc.normalizeDocument();
+						System.out.println("File read -- OK");			
 						
 						break;
 					
 					//print loaded data
 					case 3: 
-						if(fileName == null)
+						
+						if(!checkIfFileNameIsNull(fileName) && !checkIfDocIsNull(doc))
 						{
-							System.out.println("No file -- ERROR");
-						}
-						else
-						{
-							if(rootNode!=null)
-							{
-								//sintactic
-								readXMLSintactic(rootNode);	
-							}
-							else
-							{
-								System.out.println("No content (run 1 or 2 options) -- ERROR");
-							}							
-						}
+							readXMLSintactic(doc);	
+						}						
+
 						break;
 						
 					//add a new assignatura
 					case 4: 
-						if(fileName == null)
+						if(!checkIfFileNameIsNull(fileName) && !checkIfDocIsNull(doc))
 						{
-							System.out.println("No file -- ERROR");
-						}
-						else
-						{
-							if(rootNode!=null)
-							{
-								//sintactic
-								doc = addAssignatura(doc);	
-							}
-							else
-							{
-								System.out.println("No content (run 1 or 2 options) -- ERROR");
-							}							
-						}
+							Assignatura assignatura = new Assignatura();
+							doc = assignatura.addAssignatura(doc);							
+						}	
+						
 						break;	
 						
 					
 					//add a new alumne
 					case 5: 
-						if(fileName == null)
+						if(!checkIfFileNameIsNull(fileName) && !checkIfDocIsNull(doc))
 						{
-							System.out.println("No file -- ERROR");
+							Alumne alumne = new Alumne();
+							doc = alumne.addAlumne(doc);							
 						}
-						else
-						{
-							if(rootNode!=null)
-							{
-								//sintactic
-								doc = addAlumne(doc);	
-							}
-							else
-							{
-								System.out.println("No content (run 1 or 2 options) -- ERROR");
-							}							
-						}
+						
 						break;							
 					
 						
 					//write loaded data into entered file
 					case 6: 
-						if(fileName == null)
+						if(!checkIfFileNameIsNull(fileName) && !checkIfDocIsNull(doc))
 						{
-							System.out.println("No file -- ERROR");
+							doc = writeLoadedXMLContent(doc, fileName);							
 						}
-						else
-						{
-							if(rootNode!=null)
-							{
-								//sintactical write
-								doc = writeLoadedXMLContent(doc, fileName);	
-							}
-							else
-							{
-								System.out.println("No content (run 1 or 2 options) -- ERROR");
-							}							
-						}
+
 						break;						
 						
 					default:
@@ -202,12 +144,11 @@ public class Menu {
 		}
 		while(chosen_option != 0);
 
-		
 		return menu;
 	}
 	
 
-	
+	//request content that must be entered from terminal
 	public static String enterText(String text)
 	{
 		String content = "";
@@ -224,7 +165,7 @@ public class Menu {
 	}
 	
 	
-	//print menu and generate 
+	//print menu and generate the available option as String (p.e. "0|1|2|3")
 	public static void printMenu()
 	{
 		System.out.println("------ MENU ------");
@@ -243,6 +184,32 @@ public class Menu {
 			}
 		}
 	}
+	
+
+	//check if fileName is null or not 
+	public static boolean checkIfFileNameIsNull(String fileName)
+	{
+		boolean isNull = false;
+		if(fileName == null)
+		{
+			System.out.println("No file -- ERROR");
+			isNull = true;
+		}
+		return isNull;
+	}
+	
+	
+	//check if RootNode is null or not 
+	public static boolean checkIfDocIsNull(Document doc)
+	{
+		boolean isNull = false;
+		if(doc == null)
+		{
+			isNull = true;
+			System.out.println("No content (run 1 or 2 options) -- ERROR");
+		}
+		return isNull;
+	}	
 	
 	
 	//1.print menu
@@ -330,8 +297,11 @@ public class Menu {
 	
 	
 	//read the full content of file sequentially
-	public static void readXMLSequencial(Node node)
+	public static Document readXMLSequencial(Document doc)
 	{
+		doc.normalizeDocument();
+		Node node = doc.getDocumentElement();	
+		
 		if(node.hasChildNodes())
 		{
 			//each assignatura
@@ -346,13 +316,11 @@ public class Menu {
 				System.out.println(nom_assignatura.getTextContent());
 				Node durada_assignatura = getNextSublevelChildNode(assignaturaNodes.item(i),true,"durada");
 				System.out.println(durada_assignatura.getTextContent());
-				assignatures.add(assignaturaNodes.item(i));
 				
 
 				if(assignaturaNodes.item(i).hasChildNodes())
 				{
 					Node alumnesNode = getNextSublevelChildNode(assignaturaNodes.item(i), true, "alumnes");
-					alumnes.put(id_assignatura.getNodeName(),alumnesNode);
 					
 					if(alumnesNode.hasChildNodes())
 					{
@@ -372,178 +340,76 @@ public class Menu {
 				}
 			}
 		}
+		
+		return doc;
 	}
 	
 	
 	//read the full content of file sintactically
-	public static void readXMLSintactic(Node node)
+	public static void readXMLSintactic(Document doc)
 	{
-
-		if(node.hasChildNodes())
-		{
-			//every assignatura
-			NodeList nodesAssignatura = node.getChildNodes();
-			System.out.println(node.getNodeName()+" : "+nodesAssignatura.getLength());
-			for(int i = 0; i < nodesAssignatura.getLength(); i++)
+		try{
+			
+			XPath pathAssignatures = XPathFactory.newInstance().newXPath();
+			Node node = (Node) pathAssignatures.compile("/assignatures").evaluate(doc,XPathConstants.NODE);	
+		
+			if(node.hasChildNodes())
 			{
-				//print assignatures : assignatures quantity
-				System.out.println(nodesAssignatura.item(i).getNodeName()+" : ");
-				
-				if(nodesAssignatura.item(i).hasChildNodes())
+				//every assignatura
+				NodeList nodesAssignatura = node.getChildNodes();
+				System.out.println(node.getNodeName()+" : "+nodesAssignatura.getLength());
+				for(int i = 0; i < nodesAssignatura.getLength(); i++)
 				{
-					NodeList assignaturaData = nodesAssignatura.item(i).getChildNodes();
-					for(int j = 0; j < assignaturaData.getLength(); j++)
+					//print assignatures : assignatures quantity
+					System.out.println(nodesAssignatura.item(i).getNodeName()+" : ");
+					
+					if(nodesAssignatura.item(i).hasChildNodes())
 					{
-						//print numero : ,nom : ,durada :  
-						if(!assignaturaData.item(j).getNodeName().equals("alumnes"))
+						NodeList assignaturaData = nodesAssignatura.item(i).getChildNodes();
+						for(int j = 0; j < assignaturaData.getLength(); j++)
 						{
-							System.out.println(assignaturaData.item(j).getNodeName()+" : "+assignaturaData.item(j).getTextContent());
-						}
-						else
-						{
-							NodeList alumnesNode = assignaturaData.item(j).getChildNodes();
-							//print alumnes : alumnes quantity
-							System.out.println(assignaturaData.item(j).getNodeName()+" : "+alumnesNode.getLength());
-							
-							for(int k = 0; k < alumnesNode.getLength(); k++)
-							{									
-								NodeList alumneData = alumnesNode.item(k).getChildNodes();
-								for(int m = 0; m < alumneData.getLength(); m++)
-								{
-									//print nom : ,dni : ,repetidor :  
-									System.out.println(alumneData.item(m).getNodeName()+" : "+alumneData.item(m).getTextContent());
-								}
+							//print numero : ,nom : ,durada :  
+							if(!assignaturaData.item(j).getNodeName().equals("alumnes"))
+							{
+								System.out.println(assignaturaData.item(j).getNodeName()+" : "+assignaturaData.item(j).getTextContent());
 							}
-							
+							else
+							{
+								NodeList alumnesNode = assignaturaData.item(j).getChildNodes();
+								//print alumnes : alumnes quantity
+								System.out.println(assignaturaData.item(j).getNodeName()+" : "+alumnesNode.getLength());
+								
+								for(int k = 0; k < alumnesNode.getLength(); k++)
+								{									
+									NodeList alumneData = alumnesNode.item(k).getChildNodes();
+									for(int m = 0; m < alumneData.getLength(); m++)
+									{
+										//print nom : ,dni : ,repetidor :  
+										System.out.println(alumneData.item(m).getNodeName()+" : "+alumneData.item(m).getTextContent());
+									}
+								}
+								
+							}
 						}
 					}
+					else
+					{
+						System.out.println(nodesAssignatura.item(i).getNodeName()+" : "+nodesAssignatura.item(i).getTextContent());
+					}
 				}
-				else
-				{
-					System.out.println(nodesAssignatura.item(i).getNodeName()+" : "+nodesAssignatura.item(i).getTextContent());
-				}
-			}
-		}
-		else
-		{
-			System.out.println(node.getNodeName()+" : "+node.getNodeValue());
-		}
-	}
-	
-	
-	//add a new assignatura if it does not exists
-	public static Document addAssignatura(Document doc)
-	{
-		try {
-			String expression = "/assignatures";
-			XPath pathAssignatures = XPathFactory.newInstance().newXPath();
-			Node assignaturesNode = (Node) pathAssignatures.compile(expression).evaluate(doc,XPathConstants.NODE);
-			
-			Assignatura ass = new Assignatura();
-			ass.createNewAssignatura();
-			
-			String subExpression1 = "/assignatures/assignatura[numero="+ass.getNumero()+"]";
-			XPath pathAlumnes = XPathFactory.newInstance().newXPath();
-			NodeList assignaturaNode = (NodeList) pathAlumnes.compile(subExpression1).evaluate(doc,XPathConstants.NODESET);
-
-			if( !(0 < assignaturaNode.getLength()))
-			{
-				Node assignatura = doc.createElement("assignatura");		
-				
-				Node numero = doc.createElement("numero");
-				numero.setTextContent(String.valueOf(ass.getNumero()));
-			
-				Node nom = doc.createElement("nom");
-				nom.setTextContent(ass.getNom());
-				
-				Node durada = doc.createElement("durada");
-				durada.setTextContent(String.valueOf(ass.getDurada()));
-				
-				Node alumnes = doc.createElement("alumnes");
-				
-				assignaturesNode.appendChild(assignatura);
-				assignatura.appendChild(numero);
-				assignatura.appendChild(nom);
-				assignatura.appendChild(durada);						
-				assignatura.appendChild(alumnes);						
-
-				System.out.println("assignatura '"+ass.getNumero()+"' added -- OK");
 			}
 			else
 			{
-				System.out.println("assignatura '"+ass.getNumero()+"' already exists -- ERROR");
+				System.out.println(node.getNodeName()+" : "+node.getNodeValue());
 			}
 		}
 		catch(Exception e)
 		{
-			System.out.println("'id_assignatuta' not parsed -- ERROR");
+			System.out.println("");
 		}
-		
-		return doc;		
 	}
 	
-	
-	//add a new alumne 
-	public static Document addAlumne(Document doc)
-	{
-		
-		try {
-			String id_assignatura = Menu.enterText("Introdueix el número de l'assignatura per verificar que existeix: ");
-			
-			String expression = "/assignatures/assignatura[numero="+String.valueOf(id_assignatura)+"]";
-			XPath pathAssignatures = XPathFactory.newInstance().newXPath();
-			NodeList assignaturaNodes = (NodeList) pathAssignatures.compile(expression).evaluate(doc,XPathConstants.NODESET);
-			if(0 < assignaturaNodes.getLength())
-			{
-				
-				//get alumnes
-				Node alumnesNode = getNextSublevelChildNode(assignaturaNodes.item(0), true, "alumnes");
-				if(alumnesNode.getNodeType() == Node.ELEMENT_NODE)
-				{
-					//create a new instance of Alumne
-					Alumne alu = new Alumne();
-					alu.createNewAlumne();
-		
-					//create a new node Alumne
-					Node alumne = doc.createElement("alumne");		
-					
-					Node nom = doc.createElement("nom");
-					nom.setTextContent(alu.getNom());
-				
-					Node dni = doc.createElement("dni");
-					dni.setTextContent(alu.getDni());
-					
-					Node repetidor = doc.createElement("repetidor");
-					repetidor.setTextContent(String.valueOf(alu.isRepetidor()));
-					
-					alumne.appendChild(nom);
-					alumne.appendChild(dni);
-					alumne.appendChild(repetidor);	
-					
-					alumnesNode.appendChild(alumne);
 
-					System.out.println("'alumne' "+alu.getNom()+" added -- OK");
-				}
-				else
-				{
-					System.out.println("'alumne' not added -- ERROR");
-				}
-					
-			}
-			else
-			{
-				System.out.println("assignatura with numero '"+String.valueOf(id_assignatura)+"' not found -- ERROR");
-			}
-		}
-		catch(Exception e)
-		{
-			System.out.println("'id_assignatuta' not parsed -- ERROR ("+e+")");
-		}
-		
-		return doc;
-	}	
-	
-	
 	//write the doc's content into the entered file
 	public static Document writeLoadedXMLContent(Document doc, String fileName)
 	{

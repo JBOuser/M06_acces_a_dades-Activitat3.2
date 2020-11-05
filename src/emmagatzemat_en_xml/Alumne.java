@@ -3,6 +3,14 @@ package emmagatzemat_en_xml;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 public class Alumne {
 
 	private String nom;
@@ -68,6 +76,76 @@ public class Alumne {
 		{
 			System.out.println("'repetidor' not parsed -- ERROR");
 		}		
+	}	
+	
+	
+	//return the parent's node with the Alumne added
+	public Node addAlumneAsNode(Node parentNode, Document doc)
+	{
+		
+		Node alumne = doc.createElement("alumne");		
+		
+		Node nom = doc.createElement("nom");
+		nom.setTextContent(this.nom);
+	
+		Node dni = doc.createElement("dni");
+		dni.setTextContent(this.dni);
+		
+		Node repetidor = doc.createElement("repetidor");
+		repetidor.setTextContent(String.valueOf(this.repetidor));
+		
+		alumne.appendChild(nom);
+		alumne.appendChild(dni);
+		alumne.appendChild(repetidor);	
+		parentNode.appendChild(alumne);
+		
+		return parentNode;
+	}
+	
+	
+	//add a new alumne to the parsed document
+	public Document addAlumne(Document doc)
+	{
+		
+		try {
+			String id_assignatura = Menu.enterText("Introdueix el número de l'assignatura per verificar que existeix: ");
+			
+			String expression = "/assignatures/assignatura[numero="+String.valueOf(id_assignatura)+"]";
+			XPath pathAssignatures = XPathFactory.newInstance().newXPath();
+			NodeList assignaturaNodes = (NodeList) pathAssignatures.compile(expression).evaluate(doc,XPathConstants.NODESET);
+			
+			if(0 < assignaturaNodes.getLength())
+			{
+				
+				//get alumnes
+				Node alumnesNode = Menu.getNextSublevelChildNode(assignaturaNodes.item(0), true, "alumnes");
+				if(alumnesNode.getNodeType() == Node.ELEMENT_NODE)
+				{
+					//request data and create a new Alumne
+					this.createNewAlumne();
+
+					//add alumne to the entered parent node
+					alumnesNode = this.addAlumneAsNode(alumnesNode, doc);
+
+					System.out.println("'alumne' "+this.nom+" added -- OK");
+				}
+				else
+				{
+					System.out.println("'alumne' not added -- ERROR");
+				}
+					
+			}
+			else
+			{
+				System.out.println("assignatura with numero '"+String.valueOf(id_assignatura)+"' not found -- ERROR");
+			}
+		}
+		catch(Exception e)
+		{
+			System.out.println("'id_assignatuta' not parsed -- ERROR ("+e+")");
+		}
+		
+		return doc;
 	}	
 	
 }
